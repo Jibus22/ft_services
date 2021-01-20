@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wp-service 
+  labels:
+      app: ft-services
+  annotations:
+      metallb.universe.tf/allow-shared-ip: coucou
+spec:
+  type: LoadBalancer
+  selector:
+      app : wpapp
+  ports:
+    - name: wp-port
+      protocol: TCP
+      port: 5050
+      targetPort: 5050
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wp-server-conf
+  labels:
+      app: ft-services
+data:
+  homepage.conf: |
+    server {
+      listen 5050;
+
+      root /var/www/homepage/wordpress;
+      index index.php index.html;
+
+      location ~ \.php$ {
+        #fcgipassUNIX domain sockets(Inter-Process Communication)allow efficient
+        include fastcgi.conf;
+        #data exchange between processes running on the same operating system
+        fastcgi_pass 127.0.0.1:9000;
+        #while TCP/IP sockets allow processes to communicate over a network.
+      }
+      #https://www.tecmint.com/connect-nginx-to-php-fpm/
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-deployment
+  labels:
+      app: ft-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wpapp
+  template:
+    metadata:
+      labels:
+        app: wpapp
+    spec:
+      containers:
+      - name: wp
+        image: my_wp
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5050
+        volumeMounts:
+        - name: wp-vol
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: wp-vol
+        configMap:
+          name: wp-server-conf
+          items:
+              - key: homepage.conf
+                path: homepage.conf

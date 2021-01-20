@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service 
+  labels:
+      app: ft-services
+  annotations:
+      metallb.universe.tf/allow-shared-ip: coucou
+spec:
+  type: LoadBalancer
+  selector:
+      app: nginxapp
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+  labels:
+      app: ft-services
+data:
+  homepage.conf: |
+    server {
+      listen 80;
+      return 301 https://$host$request_uri;
+    }
+
+    server {
+      listen 443 ssl;
+
+      #497 is an nginx expansion of the 400 Bad Request response code, used when
+      error_page 497 https://$host:$server_port$request_uri;
+      #the client has made a HTTP request to a port listening for HTTPS requests
+
+      ssl_certificate /root/localhost.crt;
+      ssl_certificate_key /root/localhost.key;
+
+      root /var/www/homepage;
+      index index.html;
+
+      location /wordpress {
+        return 307 http://$host:5050;
+      }
+
+      #https://www.digitalocean.com/community/tutorials/understanding-nginx-http-proxying-load-balancing-buffering-and-caching
+      location /phpmyadmin/ {
+        #transmitting the original server name asked by the client
+        proxy_set_header Host $host;
+        #transmitting to backend pma IP of reverse proxy nginx
+        proxy_set_header X-Real-IP $remote_addr;
+        #transmitting to backend pma all IPs who have been met (ex : proxies)
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #transmitting original shceme (http/https). No security risk to backend
+        proxy_set_header X-Forwarded-Proto $scheme;
+        #sort of proxy url rewriting, to stay in the good folder
+        proxy_redirect   /  /phpmyadmin/;
+        proxy_pass http://pma-service:5000/;
+      }
+      #http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_redirect
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+      app: ft-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginxapp
+  template:
+    metadata:
+      labels:
+        app: nginxapp
+    spec:
+      containers:
+      - name: nginx
+        image: my_nginx
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        volumeMounts:
+        - name: nginx-vol
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-vol
+        configMap:
+          name: nginx-conf
+          items:
+              - key: homepage.conf
+                path: homepage.conf

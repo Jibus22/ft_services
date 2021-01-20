@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pma-service 
+  labels:
+      app: ft-services
+  annotations:
+      metallb.universe.tf/allow-shared-ip: coucou
+spec:
+  type: LoadBalancer
+  selector:
+      app: pmaapp
+  ports:
+    - name: pma-port
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pma-server-conf
+  labels:
+      app: ft-services
+data:
+  homepage.conf: |
+    server {
+      listen 5000;
+
+      root /var/www/homepage;
+      index index.php index.html;
+
+      location ~ \.php$ {
+        include fastcgi.conf;
+        #Pass the PHP scripts to PHP-FPM listening on 127.0.0.1:9000
+        fastcgi_pass 127.0.0.1:9000;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pma-deployment
+  labels:
+      app: ft-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pmaapp
+  template:
+    metadata:
+      labels:
+        app: pmaapp
+    spec:
+      containers:
+      - name: pma
+        image: my_pma
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: pma-vol
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: pma-vol
+        configMap:
+          name: pma-server-conf
+          items:
+              - key: homepage.conf
+                path: homepage.conf
