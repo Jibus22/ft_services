@@ -1,0 +1,11 @@
+apiVersion: 1
+#   # This file permits to point on the folder containing provisionned
+#   # dashboards. (Those dashboards can't be erased in the grafana UI)
+providers:
+ - name: 'JBdashs'
+   orgId: 1
+   folder: ''
+   folderUid: ''
+   type: file
+   options:
+     path: /var/lib/grafana/provisioning/dashboards

@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pvc
+  labels:
+    app: influx
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-service 
+  labels:
+      app: ft-services
+spec:
+  type: ClusterIP
+  selector:
+      app: influxdbapp
+  ports:
+    - name: influxdb-port
+      protocol: TCP
+      port: 8086
+      targetPort: 8086
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxDB
+  labels:
+      app: ft-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdbapp
+  template:
+    metadata:
+      labels:
+        app: influxdbapp
+    spec:
+      containers:
+      - name: influxDB
+        image: my_influxdb
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8086
+        volumeMounts:
+            - name: influxdb-pvc
+              mountPath: /var/lib/influxdb
+      volumes:
+        - name: influxdb-pvc
+          persistentVolumeClaim:
+            claimName: influxdb-pvc

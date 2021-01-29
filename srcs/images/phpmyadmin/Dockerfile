@@ -1,6 +1,10 @@
 FROM alpine:3.12
 #PHPMYADMIN
-COPY index.html /var/www/homepage/
+RUN echo $'https://dl-cdn.alpinelinux.org/alpine/v3.13/main\n\
+https://dl-cdn.alpinelinux.org/alpine/v3.13/community' > etc/apk/repositories
+
+RUN apk update && apk add telegraf
+COPY telegraf.conf /etc/telegraf.conf
 
 #php7 mbstring, json & session are required modules to work with phpmyadmin &
 #wordpress also
@@ -11,10 +15,9 @@ RUN apk update \
 	php7-mysqli \
 	php7-mbstring \
 	php7-json \
-	php7-session
-
-RUN mkdir /run/nginx \
-	&& echo '<?php phpinfo(); ?>' > /var/www/homepage/info.php
+	php7-session \
+	&& mkdir /run/nginx \
+	&& mkdir -p /var/www/homepage/
 
 RUN wget \
 https://files.phpmyadmin.net/phpMyAdmin/5.0.4/phpMyAdmin-5.0.4-english.tar.gz \

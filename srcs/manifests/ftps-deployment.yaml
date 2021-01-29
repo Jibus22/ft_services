@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ftps-service 
+  labels:
+      app: ft-services
+  annotations:
+      metallb.universe.tf/allow-shared-ip: coucou
+spec:
+  type: LoadBalancer
+  selector:
+      app: ftpsapp
+  ports:
+    - name: ftps-passive-data-port
+      protocol: TCP
+      port: 21000
+      targetPort: 21000
+    - name: ftps-commandport
+      protocol: TCP
+      port: 21
+      targetPort: 21
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ftps-server-conf
+  labels:
+      app: ft-services
+data:
+ vsftpd.conf: |
+  #!! To use this file, vsftpd must be ran with the path of this conf in params
+  #https://web.mit.edu/rhel-doc/5/RHEL-5-manual/Deployment_Guide-en-US/ch-ftp.html
+
+  local_enable=YES
+  xferlog_enable=YES
+  #pam_service_name=vsftpd
+  connect_from_port_20=YES
+  #Avoid '500 oops child died' error
+  seccomp_sandbox=NO
+  #Run vsftpd server in stand-alone mode (not by xinetd)
+  listen=YES
+
+  #Enable upload by local user.
+  write_enable=YES
+
+  #Enable read by anonymous user (without username and password).
+  secure_chroot_dir=/var/empty
+  anonymous_enable=YES
+  anon_root=/var/lib/ftp
+  no_anon_password=YES
+
+  ftpd_banner="Hello Youuuuu <3"
+
+  #Enable passive ftp mode (client->server ports opening only -good with firewall)
+  pasv_enable=YES
+  #ports range the server is allowed to open to clients. Security option
+  pasv_max_port=21000
+  pasv_min_port=21000
+
+  #SSL https://security.appspot.com/vsftpd/vsftpd_conf.html
+  ssl_enable=YES
+  rsa_cert_file=/etc/ssl/certs/vsftpd.crt
+  rsa_private_key_file=/etc/ssl/private/vsftpd.key
+  #force_anon_logins_ssl=YES
+  #force_anon_data_ssl=YES
+  allow_anon_ssl=YES
+
+  #In passive mode, after a request by a client on IP:21 command connection,
+  #the server has to give him the IP:port on which he must connect for data
+  #connection. Here in the cluster, the ftp server is behind proxies, into
+  #private k8s cluster network, with a private IP.
+  #The option below specifies the IP address for the public facing IP address of
+  #the server for servers behind Network Address Translation (NAT) firewalls.
+  pasv_address=192.168.99.100
+  #Since k8s doesn't provide solutions (DNS or ENV variables) to access to an
+  #<EXTERNAL-IP> of a service into a pod, we have to hard-code the address.
+  #Here, it match with the IP I provided in metallb configmap.
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftps
+  labels:
+      app: ft-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ftpsapp
+  template:
+    metadata:
+      labels:
+        app: ftpsapp
+    spec:
+      containers:
+      - name: ftps
+        image: my_ftps
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 21
+        - containerPort: 21000
+        volumeMounts:
+        - name: ftps-vol
+          mountPath: /etc/vsftpd/
+      volumes:
+      - name: ftps-vol
+        configMap:
+          name: ftps-server-conf
+          items:
+              - key: vsftpd.conf
+                path: vsftpd.conf

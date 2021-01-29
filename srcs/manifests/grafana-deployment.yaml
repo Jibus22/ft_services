@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service 
+  labels:
+      app: ft-services
+  annotations:
+      metallb.universe.tf/allow-shared-ip: coucou
+spec:
+  type: LoadBalancer
+  selector:
+      app: grafanaapp
+  ports:
+    - name: grafana-port
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-server-conf
+  labels:
+      app: ft-services
+data:
+ grafana.ini: |
+  ##################### Grafana Configuration Example ##########################
+  #possible values : production, development
+  app_mode = development
+  #################################### Paths ###################################
+  [paths]
+  #Path to where grafana can store temp files, sessions, and the sqlite3 db
+  #(if that is used)
+  data = /var/lib/grafana
+  #Directory where grafana can store logs
+  logs = /var/log/grafana
+  #Directory where grafana will automatically scan and look for plugins
+  plugins = /var/lib/grafana/plugins
+  # folder that contains provisioning config files that grafana will apply on
+  # startup and while running.
+  provisioning = /var/lib/grafana/provisioning
+  #################################### Server ##################################
+  [server]
+  #Protocol (http, https, h2, socket)
+  protocol = http
+  #The http port  to use
+  http_port = 3000
+  #The public facing domain name used to access grafana from a browser
+  domain = 192.168.99.100
+  #################################### Database ################################
+  [database]
+  #################################### Cache server ############################
+  [remote_cache]
+  #################################### Data proxy ###########################
+  [dataproxy]
+  #################################### Analytics ###############################
+  [analytics]
+  #################################### Security ################################
+  [security]
+  #default admin user, created on startup
+  admin_user = gfadmin
+  #default admin password, can be changed before first start of grafana,  or
+  #in profile settings
+  admin_password = gfpwd
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+      app: ft-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafanaapp
+  template:
+    metadata:
+      labels:
+        app: grafanaapp
+    spec:
+      containers:
+      - name: grafana
+        image: my_grafana
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: grafana-vol
+          mountPath: /etc/grafana/
+      volumes:
+      - name: grafana-vol
+        configMap:
+          name: grafana-server-conf
+          items:
+              - key: grafana.ini
+                path: grafana.ini

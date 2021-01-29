@@ -19,7 +19,9 @@ spec:
       protocol: TCP
       port: 443
       targetPort: 443
+
 ---
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -52,13 +54,13 @@ data:
 
       #https://www.digitalocean.com/community/tutorials/understanding-nginx-http-proxying-load-balancing-buffering-and-caching
       location /phpmyadmin/ {
-        #transmitting the original server name asked by the client
+        #transmit the original server name asked by the client
         proxy_set_header Host $host;
-        #transmitting to backend pma IP of reverse proxy nginx
+        #transmit to backend pma IP of reverse proxy nginx
         proxy_set_header X-Real-IP $remote_addr;
-        #transmitting to backend pma all IPs who have been met (ex : proxies)
+        #transmit to backend pma all IPs who have been met (ex : proxies)
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        #transmitting original shceme (http/https). No security risk to backend
+        #transmit original shceme (http/https). No security risk to backend
         proxy_set_header X-Forwarded-Proto $scheme;
         #sort of proxy url rewriting, to stay in the good folder
         proxy_redirect   /  /phpmyadmin/;
@@ -66,11 +68,13 @@ data:
       }
       #http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_redirect
     }
+
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
+  name: nginx
   labels:
       app: ft-services
 spec:

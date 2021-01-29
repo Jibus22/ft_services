@@ -1,0 +1,23 @@
+apiVersion: 1
+#   # We can find this conf file in
+#   # /usr/share/grafana/conf/provisioning/datasource/sample.yaml
+#   # It permits to setup any datasource you want by scripting. I deleted
+#   # some unusued keys but it's same as data we have to fill in the grafana UI
+#
+#   # the location of this file must be pointed by the provisioning path named
+#   # in the configuration file of grafana-server started with (grafana.ini)
+datasources:
+#   # <string, required> name of the datasource. Required
+ - name: InfluxDB
+#   # <string, required> datasource type. Required
+   type: influxdb
+#   # <string, required> access mode. direct or proxy(=server in UI). Required
+   access: proxy
+#   # <string> url
+   url: http://influxdb-service:8086
+#   # <string> database name, if used
+   database: telegraf
+   version: 1
+#   # <bool> allow users to edit datasources from the UI.
+   editable: true
+
