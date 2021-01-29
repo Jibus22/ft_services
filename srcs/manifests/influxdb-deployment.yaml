@@ -34,7 +34,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: influxDB
+  name: influxdb
   labels:
       app: ft-services
 spec:
@@ -48,7 +48,7 @@ spec:
         app: influxdbapp
     spec:
       containers:
-      - name: influxDB
+      - name: influxdb
         image: my_influxdb
         imagePullPolicy: Never
         ports:
