@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #minikube is a sort of OS disk image who has to run thanks to a hypervisor.
 #Driver option sets which one will run minikube. It could be docker, hyperkit,
@@ -12,9 +12,9 @@ minikube delete
 #Configuration depends on OS type. Mostly about the minikube driver & its associated ip
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-	echo "\n\t###### you're using linux ######\n"
+	echo $'\n\t###### you\'re using linux ######\n'
 	#Add user account 'user42' to group 'docker'. It permits to use docker in the 42 VM
-	sudo usermod -aG docker user42
+	#sudo usermod -aG docker user42
 	newgrp docker
 	minikube start --driver='docker' --cpus=3 --memory=4096 
 	kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
@@ -22,7 +22,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 	kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
 	sed -i.bak "s/"192.168.99.100"/"172.17.0.10"/g" $(grep -lr "192.168.99.100" srcs/*)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-	echo "\n\t###### you're using mac osx ######\n"
+	echo $'\n\t###### you\'re using mac osx ######\n'
 	minikube start --driver='virtualbox' --cpus=4 --memory=4096 --disk-size=20g --addons=metallb
 	sed -i.bak "s/172.17.0.10/192.168.99.100/g" $(grep -lr "172.17.0.10" srcs/*)
 else
@@ -56,7 +56,6 @@ kubectl apply -f srcs/manifests/nginx-deployment.yaml
 kubectl apply -f srcs/manifests/grafana-deployment.yaml
 
 
-alias kcgall="echo \"\tPODS\" && kubectl get po -o wide && echo \"---\n\n\tDEPLOYMENTS\" && kubectl get deploy -o wide && echo \"---\n\n\tSERVICES\" && kubectl get svc -o wide"
-kcgall
+echo "\tPODS" && kubectl get po -o wide && echo "---\n\n\tDEPLOYMENTS" && kubectl get deploy -o wide && echo "---\n\n\tSERVICES" && kubectl get svc -o wide
 
 minikube dashboard
