@@ -14,8 +14,7 @@ minikube delete
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 	echo $'\n\t###### you\'re using linux ######\n'
 	#Add user account 'user42' to group 'docker'. It permits to use docker in the 42 VM
-	#sudo usermod -aG docker user42
-	newgrp docker
+	sudo usermod -aG docker user42; newgrp docker &
 	minikube start --driver='docker' --cpus=3 --memory=4096 
 	kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
 	kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
