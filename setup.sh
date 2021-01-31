@@ -13,20 +13,14 @@ minikube delete
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 	echo $'\n\t###### you\'re using linux ######\n'
-	#Add user account 'user42' to group 'docker'. It permits to use docker in the 42 VM
-	#sudo usermod -aG docker user42; newgrp docker &
-	if [[ $(service docker status | grep running) = '' ]]
-	then
-		echo "Starting Docker service..."
-		service docker start
-		while [[ $(service docker status | grep running) = '' ]]
-		do
-			sleep 1
-		done
-	fi
 	if [[ $(groups | grep docker) = '' ]]
 	then
-		sudo usermod -aG docker $USER && newgrp docker
+		echo $'\n\tPlease run the following command then launch again setup.sh :\n\n
+		sudo usermod -aG docker $USER; newgrp docker\n\n
+		it will add $USER to docker group, then log the current session in docker UID
+		to permit you to use docker. newgrp is a shell builtin which can\'t be ran into a script.
+		Docker is used by Minikube - Minikube node is created in a docker container\n\n'
+		exit
 	fi
 	minikube start --driver='docker' --cpus=3 --memory=4096 
 	kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
@@ -38,7 +32,8 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 	minikube start --driver='virtualbox' --cpus=4 --memory=4096 --disk-size=20g --addons=metallb
 	sed -i.bak "s/172.17.0.10/192.168.99.100/g" $(grep -lr "172.17.0.10" srcs/*)
 else
-	echo "pouet";
+	echo "Ciao ciao"
+	exit
 fi
 
 kubectl apply -f srcs/manifests/metallb-configmap.yaml
