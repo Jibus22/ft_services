@@ -50,6 +50,7 @@ data:
   anonymous_enable=YES
   anon_root=/var/lib/ftp
   no_anon_password=YES
+  anon_upload_enable=YES
 
   ftpd_banner="Hello Youuuuu <3"
 
