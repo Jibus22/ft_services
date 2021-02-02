@@ -63,6 +63,6 @@ kubectl apply -f srcs/manifests/nginx-deployment.yaml
 kubectl apply -f srcs/manifests/grafana-deployment.yaml
 
 
-echo $'"\tPODS' && kubectl get po -o wide && echo $'---\n\n\tDEPLOYMENTS' && kubectl get deploy -o wide && echo $'---\n\n\tSERVICES' && kubectl get svc -o wide
+echo $'\tPODS' && kubectl get po -o wide && echo $'---\n\n\tDEPLOYMENTS' && kubectl get deploy -o wide && echo $'---\n\n\tSERVICES' && kubectl get svc -o wide && echo $'\n\n'
 
 minikube dashboard
