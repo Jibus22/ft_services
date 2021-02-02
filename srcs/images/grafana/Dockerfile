@@ -22,3 +22,6 @@ COPY dashboards /var/lib/grafana/provisioning/dashboards
 
 COPY setup.sh /
 ENTRYPOINT ["/setup.sh"]
+CMD ["grafana-server", "-config", "/etc/grafana/grafana.ini", "-homepath", "/usr/share/grafana/"]
+#grafana-server needs the location of the application files also, with
+#-homepath option

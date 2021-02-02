@@ -4,6 +4,4 @@
 
 telegraf --config etc/telegraf.conf &
 
-#grafana-server needs the location of the application files also, with
-#-homepath option
-grafana-server -config /etc/grafana/grafana.ini -homepath /usr/share/grafana/
+exec "$@"

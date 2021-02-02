@@ -34,7 +34,6 @@ COPY setup.sh /
 ENTRYPOINT ["/setup.sh"]
 
 
-
 ######## ! Following were commented at a point I was running container #########
 ######## ! with only mariadbd server as a process. But it still interesting. ###
 

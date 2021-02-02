@@ -1,5 +1,9 @@
 #!/bin/sh
 
+#allows one to use built-ins such as fg and bg, which would be disabled under
+#set +m (the default for non-interactive shells)
+#set -m
+
 #I have to install the database and configure it from this script and not in
 #a container layer, because the data directory will be created (mounted) by
 #k8s at runtime (persistent volume).
@@ -8,7 +12,12 @@
 #followings mariadb commands, on the same startup script
 
 mariadb-install-db
-mariadbd-safe & sleep 1
+(mariadbd-safe) &
+PID="$!"
+until mysql
+	do
+	echo "NO_UP"
+done
 mariadb -e "CREATE DATABASE wpdb; CREATE USER \
 'admin'@'%' IDENTIFIED BY 'pwd'; GRANT ALL PRIVILEGES ON *.* \
 TO 'admin'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
@@ -16,10 +25,12 @@ mariadb wpdb < wpdb.sql
 
 #mariadb-safe won't run the mariadbd server if anything goes wrong.
 
+telegraf --config etc/telegraf.conf &
 #A database wpdb is created, then an admin user with pwd password, with
 #all privileges on all tables & databases.
 #And the database dump wpdb.sql is loaded is the database wpdb, to recover
 #database settings asked in the project (many users).
+wait $PID
 
 #Saying 'admin'@'%' rather than 'admin'@'localhost' gave me "access denied"
 #pma error on a monolithic docker image (with all applications together).
@@ -36,5 +47,3 @@ mariadb wpdb < wpdb.sql
 #Format below ->
 #"GRANT type_of_permission ON database_name.table_name TO
 #'your_mysql_username'@'The_client_host_from_which_you_connect';"
-
-telegraf --config etc/telegraf.conf
